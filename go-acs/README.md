@@ -29,7 +29,7 @@ Build order: config → logger → SOAP/CWMP → session state machine → ACS H
 
 ## Tech stack
 
-- **Go 1.22+**, Fiber, pgx/v5, MongoDB driver, Redis, NATS, Viper, Zap, JWT, testify, gorilla/websocket
+- **Go 1.24+** (see `go.mod`), Fiber, pgx/v5, MongoDB driver, Redis, NATS, Viper, Zap, JWT, testify, gorilla/websocket
 
 ## Ports
 
