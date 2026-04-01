@@ -10,5 +10,6 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /go-acs .
 COPY config /app/config
+COPY --from=builder /app/migrations /app/migrations
 EXPOSE 7547 7567 8080
 ENTRYPOINT ["./go-acs"]
