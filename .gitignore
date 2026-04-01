@@ -1,0 +1,23 @@
+# Go
+go-acs/bin/
+*.exe
+*.test
+
+# Node / dashboard
+dashboard/node_modules/
+dashboard/.svelte-kit/
+dashboard/build/
+dashboard/dist/
+
+# Env and secrets (never commit)
+.env
+.env.*
+*.pem
+*.key
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

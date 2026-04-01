@@ -1,0 +1,34 @@
+acs:
+  cwmp_port: 7547
+  connection_request_port: 7567
+  api_port: 8080
+
+api:
+  addr: ":8080"
+  base_url: "http://localhost:7547"
+  firmware_base_url: "http://localhost:8080/firmware"
+  session_timeout: 30s
+  max_concurrent_sessions: 10000
+  tls:
+    enabled: false
+    cert_file: ""
+    key_file: ""
+
+database:
+  mongo_uri: "mongodb://localhost:27017"
+  mongo_db: "novaacs"
+  postgres_dsn: "postgres://acs:acs@localhost:5432/novaacs?sslmode=disable"
+  redis_addr: "localhost:6379"
+
+nats:
+  url: "nats://localhost:4222"
+
+auth:
+  access_secret:  "change-me-in-production-min-32-chars"
+  refresh_secret: "change-me-refresh-secret-min-32-chars"
+  access_ttl:     "15m"
+  refresh_ttl:    "168h"
+
+logging:
+  level: "info"
+  format: "json"
