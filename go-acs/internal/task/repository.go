@@ -11,6 +11,8 @@ var ErrNotFound = errors.New("task not found")
 // Repository defines task queue persistence.
 type Repository interface {
 	Enqueue(ctx context.Context, t *Task) error
+	// HasPendingCreatedBy reports whether a pending task exists for this device with the given created_by.
+	HasPendingCreatedBy(ctx context.Context, tenantID, serial, createdBy string) (bool, error)
 	NextForDevice(ctx context.Context, tenantID, serial string) (*Task, error)
 	Complete(ctx context.Context, tenantID, taskID string, result Result) error
 	Fail(ctx context.Context, tenantID, taskID string, reason string) error

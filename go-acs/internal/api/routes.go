@@ -31,6 +31,13 @@ func (s *Server) registerRoutes() {
 	v1.Get("/ws", h.WSUpgrade, h.WSHandler(s.hub))
 	v1.Get("/auth/me", h.GetMe)
 
+	v1.Get("/tenant/settings", middleware.RequireRole(auth.RoleAdmin), h.GetTenantSettings)
+
+	users := v1.Group("/users", middleware.RequireRole(auth.RoleAdmin))
+	users.Get("", h.ListUsers)
+	users.Post("", h.CreateUser)
+	users.Delete("/:id", h.DeactivateUser)
+
 	v1.Get("/devices", h.ListDevices)
 	v1.Post("/devices/preregister", middleware.RequireRole(auth.RoleAdmin), h.PreRegister)
 	// More specific /devices/:serial/... routes before generic /devices/:serial

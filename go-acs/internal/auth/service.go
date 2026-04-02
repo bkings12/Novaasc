@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,9 +14,11 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrInvalidToken       = errors.New("invalid or expired token")
-	ErrInsufficientRole   = errors.New("insufficient permissions")
+	ErrInvalidCredentials   = errors.New("invalid email or password")
+	ErrInvalidToken         = errors.New("invalid or expired token")
+	ErrInsufficientRole     = errors.New("insufficient permissions")
+	ErrCannotDeactivateSelf = errors.New("cannot deactivate your own account")
+	ErrInvalidRole          = errors.New("invalid role for user creation")
 )
 
 type Config struct {
@@ -142,4 +145,46 @@ func (s *Service) validateToken(tokenStr, secret string) (*Claims, error) {
 func HashPassword(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	return string(b), err
+}
+
+// ListUsers returns all users for a tenant (including inactive).
+func (s *Service) ListUsers(ctx context.Context, tenantID string) ([]*User, error) {
+	return s.users.List(ctx, tenantID)
+}
+
+// CreateUser adds a user to the tenant. Allowed roles: admin, user, readonly.
+func (s *Service) CreateUser(ctx context.Context, tenantID, email, password string, role Role) (*User, error) {
+	email = strings.TrimSpace(email)
+	if email == "" || len(password) < 8 {
+		return nil, fmt.Errorf("email required and password min 8 characters")
+	}
+	switch role {
+	case RoleAdmin, RoleUser, RoleReadOnly:
+	default:
+		return nil, ErrInvalidRole
+	}
+	hash, err := HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	u := &User{
+		TenantID:     tenantID,
+		Email:        email,
+		PasswordHash: hash,
+		Role:         role,
+		Active:       true,
+	}
+	if err := s.users.Create(ctx, u); err != nil {
+		return nil, err
+	}
+	u.PasswordHash = ""
+	return u, nil
+}
+
+// DeactivateUser sets active=false. Actor cannot deactivate themselves.
+func (s *Service) DeactivateUser(ctx context.Context, tenantID, actorUserID, targetUserID string) error {
+	if actorUserID == targetUserID {
+		return ErrCannotDeactivateSelf
+	}
+	return s.users.SetActive(ctx, tenantID, targetUserID, false)
 }

@@ -3,8 +3,8 @@
   import { api } from '$lib/api';
   import type { BackupDetail } from '$lib/types';
 
-  const serial = $page.params.serial;
-  const id = $page.params.id;
+  const serial = $page.params.serial as string;
+  const id = $page.params.id as string;
   let backup: BackupDetail | null = null;
   let error = '';
 

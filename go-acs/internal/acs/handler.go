@@ -318,6 +318,7 @@ func (h *Handler) handleInform(c *fiber.Ctx, log *zap.Logger, rawBody []byte, t 
 				"events":           dev.LastEvents,
 			})
 		}
+		h.enqueueInformParameterSync(c.Context(), t.ID, dev.SerialNumber, params, log)
 	}
 
 	eventCodes := inform.EventCodes()
@@ -358,6 +359,42 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// enqueueInformParameterSync queues a low-priority GetParameterValues to refresh XPON/IGD parameters
+// on the next CWMP empty-POST (same session after InformResponse, or a later Inform cycle).
+func (h *Handler) enqueueInformParameterSync(ctx context.Context, tenantID, serial string, informParams map[string]string, log *zap.Logger) {
+	if h.TaskRepo == nil {
+		return
+	}
+	pending, err := h.TaskRepo.HasPendingCreatedBy(ctx, tenantID, serial, InformParameterSyncCreatedBy)
+	if err != nil {
+		log.Warn("inform sync pending check", zap.Error(err))
+		return
+	}
+	if pending {
+		return
+	}
+	names := ParameterSyncPathsForInform(informParams)
+	if len(names) == 0 {
+		return
+	}
+	tk := &task.Task{
+		TenantID:       tenantID,
+		DeviceSerial:   serial,
+		Type:           task.TypeGetParameterValues,
+		Priority:       3, // below API (10) and typical provisioning rules
+		ParameterNames: names,
+		CreatedBy:      InformParameterSyncCreatedBy,
+	}
+	if err := h.TaskRepo.Enqueue(ctx, tk); err != nil {
+		log.Warn("enqueue inform parameter sync", zap.Error(err), zap.String("serial", serial))
+		return
+	}
+	log.Info("enqueued inform parameter sync",
+		zap.String("serial", serial),
+		zap.Int("paths", len(names)),
+	)
 }
 
 func detectPON(inform *cwmp.Inform) *device.PONInfo {

@@ -118,3 +118,22 @@ export interface RestoreJobResponse {
   task_count: number;
   message: string;
 }
+
+export interface ApiUser {
+  id: string;
+  tenant_id: string;
+  email: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantSettings {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  max_devices: number;
+  api_key: string;
+}

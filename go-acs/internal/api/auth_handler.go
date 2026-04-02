@@ -56,3 +56,20 @@ func (h *Handler) GetMe(c *fiber.Ctx) error {
 		"tenant":    t.Slug,
 	})
 }
+
+// GetTenantSettings returns tenant metadata including ACS API key (admin only).
+func (h *Handler) GetTenantSettings(c *fiber.Ctx) error {
+	t := tenantFromCtx(c)
+	full, err := h.tenantRepo.GetByID(c.Context(), t.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to load tenant")
+	}
+	return c.JSON(fiber.Map{
+		"id":          full.ID,
+		"name":        full.Name,
+		"slug":        full.Slug,
+		"plan":        full.Plan,
+		"max_devices": full.MaxDevices,
+		"api_key":     full.APIKey,
+	})
+}

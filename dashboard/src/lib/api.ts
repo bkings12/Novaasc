@@ -1,4 +1,4 @@
-import { getToken, logout } from './auth';
+import { getToken, logout, tryRefresh } from './auth';
 import type {
   Device,
   Task,
@@ -7,7 +7,9 @@ import type {
   BackupSummary,
   BackupDetail,
   BackupCreated,
-  RestoreJobResponse
+  RestoreJobResponse,
+  ApiUser,
+  TenantSettings
 } from './types';
 
 const BASE =
@@ -17,7 +19,8 @@ const BASE =
 async function request<T>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  isRetry = false
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -27,10 +30,14 @@ async function request<T>(
     },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (res.status === 401) {
+
+  if (res.status === 401 && !isRetry) {
+    const ok = await tryRefresh();
+    if (ok) return request<T>(method, path, body, true);
     logout();
     throw new Error('Unauthorized');
   }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((err as { error?: string }).error ?? res.statusText);
@@ -46,6 +53,17 @@ const del = <T>(path: string) => request<T>('DELETE', path);
 
 export const api = {
   stats: () => get<Stats>('/api/v1/stats'),
+
+  tenant: {
+    settings: () => get<TenantSettings>('/api/v1/tenant/settings')
+  },
+
+  users: {
+    list: () => get<{ data: ApiUser[]; count: number }>('/api/v1/users'),
+    create: (body: { email: string; password: string; role: string }) =>
+      post<ApiUser>('/api/v1/users', body),
+    delete: (id: string) => del(`/api/v1/users/${id}`)
+  },
 
   devices: {
     list: (params = '') => get<{ data: Device[]; total: number }>(`/api/v1/devices${params}`),

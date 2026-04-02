@@ -70,6 +70,19 @@ func (r *MongoRepository) Enqueue(ctx context.Context, t *Task) error {
 	return nil
 }
 
+func (r *MongoRepository) HasPendingCreatedBy(ctx context.Context, tenantID, serial, createdBy string) (bool, error) {
+	n, err := r.col.CountDocuments(ctx, bson.M{
+		"tenant_id":     tenantID,
+		"device_serial": serial,
+		"status":        StatusPending,
+		"created_by":    createdBy,
+	})
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 func (r *MongoRepository) NextForDevice(ctx context.Context, tenantID, serial string) (*Task, error) {
 	filter := bson.M{
 		"tenant_id":     tenantID,

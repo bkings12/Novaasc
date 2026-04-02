@@ -10,17 +10,24 @@
     Settings,
     Wifi,
     WifiOff,
-    LogOut
+    LogOut,
+    Building2,
+    Users
   } from 'lucide-svelte';
 
   onMount(connectWS);
   onDestroy(disconnectWS);
 
-  const nav = [
+  const navMain = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/devices', label: 'Devices', icon: Router },
     { href: '/tasks', label: 'Tasks', icon: ListTodo },
     { href: '/provisioning', label: 'Provisioning', icon: Settings }
+  ];
+
+  const navAdmin = [
+    { href: '/settings/tenant', label: 'Tenant', icon: Building2 },
+    { href: '/settings/users', label: 'Users', icon: Users }
   ];
 </script>
 
@@ -31,12 +38,12 @@
     <div class="p-4 border-b border-gray-800">
       <span class="font-bold text-lg">NovaACS</span>
       <div class="text-xs text-gray-500 mt-0.5">
-        {$currentUser?.tenant_id ?? ''}
+        {$currentUser?.tenant ?? $currentUser?.tenant_id ?? ''}
       </div>
     </div>
 
-    <nav class="flex-1 p-3 space-y-1">
-      {#each nav as item}
+    <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+      {#each navMain as item}
         {@const active =
           $page.url.pathname === item.href ||
           ($page.url.pathname.startsWith(item.href + '/') && item.href !== '/')}
@@ -51,6 +58,24 @@
           {item.label}
         </a>
       {/each}
+      {#if $currentUser?.role === 'admin'}
+        <div class="pt-3 mt-2 border-t border-gray-800 text-[10px] uppercase tracking-wider text-gray-600 px-3">
+          Settings
+        </div>
+        {#each navAdmin as item}
+          {@const active = $page.url.pathname === item.href || $page.url.pathname.startsWith(item.href + '/')}
+          <a
+            href={item.href}
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+              {active
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+          >
+            <svelte:component this={item.icon} size={16} />
+            {item.label}
+          </a>
+        {/each}
+      {/if}
     </nav>
 
     <div class="p-3 border-t border-gray-800 space-y-2">
