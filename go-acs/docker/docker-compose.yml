@@ -14,6 +14,22 @@ services:
       - DATABASE_POSTGRES_DSN=postgres://acs:acs@postgres:5432/novaacs?sslmode=disable
       - DATABASE_REDIS_ADDR=redis:6379
       - NATS_URL=nats://nats:4222
+      # ── Bridge auth ────────────────────────────────────────────────────
+      # The billing backend (NestJS) signs short-lived HS256 JWTs with
+      # NOVAACS_JWT_SECRET from billing/.env. NovaACS validates them
+      # against auth.access_secret in config.yaml — Viper's AutomaticEnv
+      # (`.` → `_`) lets us override that key with the AUTH_ACCESS_SECRET
+      # env var. Both values MUST match or every billing → ACS request
+      # fails with HTTP 401.
+      #
+      # ${NOVAACS_JWT_SECRET} is substituted by compose at parse time, so
+      # it must be present in the .env file located in the SAME directory
+      # as this compose file. The repo ships a symlink:
+      #     backend/Novaacs/go-acs/docker/.env -> ../../../.env
+      # which points at billing/.env. If the symlink is missing, recreate
+      # it with:
+      #     ln -sf ../../../.env backend/Novaacs/go-acs/docker/.env
+      - AUTH_ACCESS_SECRET=${NOVAACS_JWT_SECRET:?NOVAACS_JWT_SECRET missing — see comment above and create docker/.env symlink to billing/.env}
     depends_on:
       - mongodb
       - postgres
