@@ -38,6 +38,15 @@ services:
 
   mongodb:
     image: mongo:7
+    mem_limit: 900m
+    memswap_limit: 900m
+    command:
+      - mongod
+      - --bind_ip_all
+      - --wiredTigerCacheSizeGB
+      - "0.30"
+      - --wiredTigerCollectionBlockCompressor
+      - snappy
     ports:
       - "27018:27017"   # 27018 on host to avoid conflict with local Mongo on 27017
     volumes:
